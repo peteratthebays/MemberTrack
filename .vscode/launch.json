@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug API",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/bin/Debug/net10.0/backend.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "preLaunchTask": "Run Frontend"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run API",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "backend/backend.csproj", "--launch-profile", "https"],
+      "isBackground": true,
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run Frontend",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Run All",
+      "dependsOn": ["Run API", "Run Frontend"],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
