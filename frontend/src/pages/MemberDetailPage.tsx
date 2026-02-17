@@ -9,6 +9,7 @@ import {
   getMemberMemberships,
   createMembership,
 } from "@/services/membershipService";
+import { useLookups } from "@/hooks/useLookups";
 import type { Member, UpdateMember } from "@/types/member";
 import type { Membership, CreateMembership } from "@/types/membership";
 import { Button } from "@/components/ui/button";
@@ -44,29 +45,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 
 const TITLES = ["Mr", "Mrs", "Ms", "Miss", "Dr", "Prof", "Rev"];
-const STATES = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
 
-const MEMBERSHIP_TYPES = ["Single", "Couple", "Family"];
-const PAY_TYPES = ["Auto", "Annual", "NotApplicable"];
-const MEMBERSHIP_STATUSES = ["Active", "NonActive"];
-const MEMBER_RIGHTS = ["Paid", "Associate", "VotingRights"];
-const MEMBER_CATEGORIES = [
-  "Community",
-  "Life",
-  "Volunteer",
-  "ExBoard",
-  "Board",
-  "Doctor",
-  "Family",
-  "Staff",
-];
-const RENEWAL_STATUSES = ["New", "Renewed", "ToRenew", "Overdue", "NotRenewing"];
-const MEMBERSHIP_ROLES = ["Primary", "Secondary", "Dependent"];
 
 const NONE_VALUE = "__none__";
 
@@ -83,6 +67,13 @@ function toDateInputValue(dateStr: string | null): string {
 export function MemberDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const lookups = useLookups();
+  const membershipTypes = lookups?.membershipTypes ?? [];
+  const payTypes = lookups?.payTypes ?? [];
+  const membershipStatuses = lookups?.membershipStatuses ?? [];
+  const memberRights = lookups?.memberRights ?? [];
+  const memberCategories = lookups?.memberCategories ?? [];
+  const renewalStatuses = lookups?.renewalStatuses ?? [];
 
   const [member, setMember] = useState<Member | null>(null);
   const [memberships, setMemberships] = useState<Membership[]>([]);
@@ -174,6 +165,49 @@ export function MemberDetailPage() {
     loadData();
   }, [id]);
 
+  function computeDefaultStartDate(): string {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().substring(0, 10);
+
+    // memberships are ordered by startDate desc, so [0] is the latest
+    const latest = memberships[0];
+    if (!latest?.endDate) return todayStr;
+
+    const endDate = new Date(latest.endDate);
+    endDate.setHours(0, 0, 0, 0);
+    const daysSinceEnd = Math.floor(
+      (today.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysSinceEnd <= 30) {
+      // Start from previous end date + 1 day
+      const nextDay = new Date(endDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      return nextDay.toISOString().substring(0, 10);
+    }
+
+    return todayStr;
+  }
+
+  function openAddMembershipDialog() {
+    const startDate = computeDefaultStartDate();
+    const latest = memberships[0];
+    setNewMembership({
+      type: latest?.type ?? "Single",
+      payType: latest?.payType ?? "Annual",
+      status: "Active",
+      rights: latest?.rights ?? "Paid",
+      category: latest?.category ?? "Community",
+      renewalStatus: "New",
+      startDate,
+      endDate: null,
+      dateLastPaid: null,
+      members: [],
+    });
+    setAddMembershipOpen(true);
+  }
+
   function updateForm(field: keyof UpdateMember, value: string | number | null) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setSaveSuccess(false);
@@ -228,18 +262,6 @@ export function MemberDetailPage() {
       const updatedMemberships = await getMemberMemberships(memberId);
       setMemberships(updatedMemberships);
       setAddMembershipOpen(false);
-      setNewMembership({
-        type: "Single",
-        payType: "Annual",
-        status: "Active",
-        rights: "Paid",
-        category: "Community",
-        renewalStatus: "New",
-        startDate: new Date().toISOString().substring(0, 10),
-        endDate: null,
-        dateLastPaid: null,
-        members: [],
-      });
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to create membership"
@@ -406,64 +428,13 @@ export function MemberDetailPage() {
           </div>
 
           {/* Address */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Address
-            </h3>
-            <div className="space-y-2">
-              <Label htmlFor="addressStreet">Street</Label>
-              <Input
-                id="addressStreet"
-                value={form.addressStreet ?? ""}
-                onChange={(e) =>
-                  updateForm("addressStreet", e.target.value || null)
-                }
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="addressSuburb">Suburb</Label>
-                <Input
-                  id="addressSuburb"
-                  value={form.addressSuburb ?? ""}
-                  onChange={(e) =>
-                    updateForm("addressSuburb", e.target.value || null)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="addressState">State</Label>
-                <Select
-                  value={form.addressState || NONE_VALUE}
-                  onValueChange={(v) =>
-                    updateForm("addressState", v === NONE_VALUE ? null : v)
-                  }
-                >
-                  <SelectTrigger id="addressState" className="w-full">
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE_VALUE}>None</SelectItem>
-                    {STATES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="addressPostcode">Postcode</Label>
-                <Input
-                  id="addressPostcode"
-                  value={form.addressPostcode ?? ""}
-                  onChange={(e) =>
-                    updateForm("addressPostcode", e.target.value || null)
-                  }
-                />
-              </div>
-            </div>
-          </div>
+          <AddressAutocomplete
+            street={form.addressStreet}
+            suburb={form.addressSuburb}
+            state={form.addressState}
+            postcode={form.addressPostcode}
+            onFieldChange={updateForm}
+          />
 
           {/* Other Fields */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -529,11 +500,9 @@ export function MemberDetailPage() {
               open={addMembershipOpen}
               onOpenChange={setAddMembershipOpen}
             >
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Add Membership
-                </Button>
-              </DialogTrigger>
+              <Button variant="outline" size="sm" onClick={openAddMembershipDialog}>
+                Add Membership
+              </Button>
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Add Membership</DialogTitle>
@@ -556,7 +525,7 @@ export function MemberDetailPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {MEMBERSHIP_TYPES.map((t) => (
+                          {membershipTypes.map((t) => (
                             <SelectItem key={t} value={t}>
                               {t}
                             </SelectItem>
@@ -576,7 +545,7 @@ export function MemberDetailPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {PAY_TYPES.map((p) => (
+                          {payTypes.map((p) => (
                             <SelectItem key={p} value={p}>
                               {p}
                             </SelectItem>
@@ -598,7 +567,7 @@ export function MemberDetailPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {MEMBERSHIP_STATUSES.map((s) => (
+                          {membershipStatuses.map((s) => (
                             <SelectItem key={s} value={s}>
                               {s}
                             </SelectItem>
@@ -618,7 +587,7 @@ export function MemberDetailPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {MEMBER_RIGHTS.map((r) => (
+                          {memberRights.map((r) => (
                             <SelectItem key={r} value={r}>
                               {r}
                             </SelectItem>
@@ -643,7 +612,7 @@ export function MemberDetailPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {MEMBER_CATEGORIES.map((c) => (
+                          {memberCategories.map((c) => (
                             <SelectItem key={c} value={c}>
                               {c}
                             </SelectItem>
@@ -666,7 +635,7 @@ export function MemberDetailPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {RENEWAL_STATUSES.map((r) => (
+                          {renewalStatuses.map((r) => (
                             <SelectItem key={r} value={r}>
                               {r}
                             </SelectItem>

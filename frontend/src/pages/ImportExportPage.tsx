@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { importCsv, exportCsv } from "@/services/importExportService";
+import { useLookups } from "@/hooks/useLookups";
 import type { ImportResult } from "@/types/importExport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,22 +28,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const MEMBERSHIP_STATUSES = ["Active", "NonActive"];
-const MEMBER_CATEGORIES = [
-  "Community",
-  "Life",
-  "Volunteer",
-  "ExBoard",
-  "Board",
-  "Doctor",
-  "Family",
-  "Staff",
-];
-const RENEWAL_STATUSES = ["New", "Renewed", "ToRenew", "Overdue", "NotRenewing"];
-
 const ALL_VALUE = "__all__";
 
 export function ImportExportPage() {
+  const lookups = useLookups();
+  const membershipStatuses = lookups?.membershipStatuses ?? [];
+  const memberCategories = lookups?.memberCategories ?? [];
+  const renewalStatuses = lookups?.renewalStatuses ?? [];
+
   // Import state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -249,7 +242,7 @@ export function ImportExportPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL_VALUE}>All Statuses</SelectItem>
-                {MEMBERSHIP_STATUSES.map((s) => (
+                {membershipStatuses.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
                   </SelectItem>
@@ -268,7 +261,7 @@ export function ImportExportPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL_VALUE}>All Categories</SelectItem>
-                {MEMBER_CATEGORIES.map((c) => (
+                {memberCategories.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
                   </SelectItem>
@@ -287,7 +280,7 @@ export function ImportExportPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL_VALUE}>All Renewal Statuses</SelectItem>
-                {RENEWAL_STATUSES.map((r) => (
+                {renewalStatuses.map((r) => (
                   <SelectItem key={r} value={r}>
                     {r}
                   </SelectItem>

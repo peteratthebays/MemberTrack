@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createMember } from "@/services/memberService";
 import type { CreateMember } from "@/types/member";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +22,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 const TITLES = ["Mr", "Mrs", "Ms", "Miss", "Dr", "Prof", "Rev"];
-const STATES = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
 
 const NONE_VALUE = "__none__";
 
@@ -171,64 +171,13 @@ export function MemberCreatePage() {
           </div>
 
           {/* Address */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Address
-            </h3>
-            <div className="space-y-2">
-              <Label htmlFor="addressStreet">Street</Label>
-              <Input
-                id="addressStreet"
-                value={form.addressStreet ?? ""}
-                onChange={(e) =>
-                  updateForm("addressStreet", e.target.value || null)
-                }
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="addressSuburb">Suburb</Label>
-                <Input
-                  id="addressSuburb"
-                  value={form.addressSuburb ?? ""}
-                  onChange={(e) =>
-                    updateForm("addressSuburb", e.target.value || null)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="addressState">State</Label>
-                <Select
-                  value={form.addressState || NONE_VALUE}
-                  onValueChange={(v) =>
-                    updateForm("addressState", v === NONE_VALUE ? null : v)
-                  }
-                >
-                  <SelectTrigger id="addressState" className="w-full">
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE_VALUE}>None</SelectItem>
-                    {STATES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="addressPostcode">Postcode</Label>
-                <Input
-                  id="addressPostcode"
-                  value={form.addressPostcode ?? ""}
-                  onChange={(e) =>
-                    updateForm("addressPostcode", e.target.value || null)
-                  }
-                />
-              </div>
-            </div>
-          </div>
+          <AddressAutocomplete
+            street={form.addressStreet}
+            suburb={form.addressSuburb}
+            state={form.addressState}
+            postcode={form.addressPostcode}
+            onFieldChange={updateForm}
+          />
 
           {/* Other Fields */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

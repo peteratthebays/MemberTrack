@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getMembers } from "@/services/memberService";
 import { bulkUpdateMembershipStatus } from "@/services/bulkService";
+import { useLookups } from "@/hooks/useLookups";
 import { type MemberListItem, type PagedResult } from "@/types/member";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,19 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const MEMBERSHIP_STATUSES = ["Active", "NonActive"];
-const MEMBER_CATEGORIES = [
-  "Community",
-  "Life",
-  "Volunteer",
-  "ExBoard",
-  "Board",
-  "Doctor",
-  "Family",
-  "Staff",
-];
-const RENEWAL_STATUSES = ["New", "Renewed", "ToRenew", "Overdue", "NotRenewing"];
 
 const ALL_VALUE = "__all__";
 const NONE_VALUE = "__none__";
@@ -74,6 +62,10 @@ function renewalBadgeVariant(
 export function MembersPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const lookups = useLookups();
+  const membershipStatuses = lookups?.membershipStatuses ?? [];
+  const memberCategories = lookups?.memberCategories ?? [];
+  const renewalStatuses = lookups?.renewalStatuses ?? [];
 
   const search = searchParams.get("search") ?? "";
   const status = searchParams.get("status") ?? "";
@@ -237,7 +229,7 @@ export function MembersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL_VALUE}>All Statuses</SelectItem>
-            {MEMBERSHIP_STATUSES.map((s) => (
+            {membershipStatuses.map((s) => (
               <SelectItem key={s} value={s}>
                 {s}
               </SelectItem>
@@ -256,7 +248,7 @@ export function MembersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL_VALUE}>All Categories</SelectItem>
-            {MEMBER_CATEGORIES.map((c) => (
+            {memberCategories.map((c) => (
               <SelectItem key={c} value={c}>
                 {c}
               </SelectItem>
@@ -275,7 +267,7 @@ export function MembersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL_VALUE}>All Renewal Statuses</SelectItem>
-            {RENEWAL_STATUSES.map((r) => (
+            {renewalStatuses.map((r) => (
               <SelectItem key={r} value={r}>
                 {r}
               </SelectItem>
@@ -450,7 +442,7 @@ export function MembersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE_VALUE}>-- Set Status --</SelectItem>
-                  {MEMBERSHIP_STATUSES.map((s) => (
+                  {membershipStatuses.map((s) => (
                     <SelectItem key={s} value={s}>
                       {s}
                     </SelectItem>
@@ -467,7 +459,7 @@ export function MembersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE_VALUE}>-- Set Renewal --</SelectItem>
-                  {RENEWAL_STATUSES.map((r) => (
+                  {renewalStatuses.map((r) => (
                     <SelectItem key={r} value={r}>
                       {r}
                     </SelectItem>

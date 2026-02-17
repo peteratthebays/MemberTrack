@@ -6,10 +6,6 @@
 
 ## Backlog
 
-### Data Model & Backend
-- Membership renewal logic (default to previous end date + 1 if < 30 days late, else today's date)
-- Wire up lookups API in frontend pages (replace hardcoded enum values)
-
 ### Authentication & Authorisation
 - Create Entra ID app registrations (API + SPA)
 - Wire up MSAL.js on frontend (create src/auth/, msalConfig.ts, bearer token helper)
@@ -18,9 +14,6 @@
 - Restrict access to Entra ID group `b4808399-e821-47a3-a56a-3fcd8f203b4d`
 - Role-based access structure for future role splits (e.g. restrict bulk edits)
 
-### Address
-- Optional: address autocompletion service integration
-
 ### Deployment
 - Configure production SQL Server connection string
 - Set up GitHub Actions workflows (deploy-frontend.yml, deploy-api.yml)
@@ -28,8 +21,6 @@
 - Deploy backend to Azure App Service or IIS
 - Configure production CORS origins
 
-### Infrastructure
-- Update EF Core tools to match runtime version (currently 9.0.8 vs 10.0.3)
 
 ## Done
 
@@ -57,6 +48,10 @@
 - Bulk operations — checkbox selection on members list, floating action bar, bulk status/renewal update
 - Dashboard — stat cards (total, active, renewals due), members by category + renewal status with visual bars
 - Code review against reference architecture — all conventions verified
+- Lookups API wired up in all frontend pages (useLookups hook with module-level cache)
+- Membership renewal logic — start date defaults to previous end + 1 if ≤ 30 days late, else today; dialog pre-fills type/payType/rights/category from latest membership
+- EF Core tools updated to 10.0.3 (matches runtime)
+- Address autocomplete — Google Places API integration with reusable AddressAutocomplete component, graceful degradation when no API key
 
 ## Bugs
 
