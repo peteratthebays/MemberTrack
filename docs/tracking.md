@@ -6,21 +6,49 @@
 
 ## Backlog
 
-### Authentication & Authorisation
-- Create Entra ID app registrations (API + SPA)
-- Wire up MSAL.js on frontend (create src/auth/, msalConfig.ts, bearer token helper)
-- Enable JWT bearer auth on backend (uncomment in Program.cs)
-- Add `[Authorize]` to all controllers (except HealthController which gets `[AllowAnonymous]`)
+### Your tasks (manual / portal steps)
+
+#### Google Places API
+1. Create a Google Cloud project (or use an existing one)
+2. Enable **Places API** and **Maps JavaScript API** in the Google Cloud Console
+3. Create an API key → restrict by HTTP referrer (`localhost:3000` for dev, plus production domain later)
+4. Set `VITE_GOOGLE_PLACES_API_KEY=your-key-here` in `frontend/.env`
+5. Restart the dev server — address autocomplete will activate automatically
+
+#### Entra ID App Registrations
+1. Go to **Azure Portal → Microsoft Entra ID → App registrations**
+2. Register **API app** (backend):
+   - Name: `MemberTrack API`
+   - Supported account types: Single tenant
+   - Expose an API → set Application ID URI (e.g. `api://membertrack-api`)
+   - Add a scope: `access_as_user`
+   - Note the **Application (client) ID** and **Tenant ID**
+3. Register **SPA app** (frontend):
+   - Name: `MemberTrack SPA`
+   - Supported account types: Single tenant
+   - Authentication → Add platform → Single-page application
+   - Redirect URIs: `http://localhost:3000`, plus production URL later
+   - API permissions → Add `MemberTrack API / access_as_user` (delegated)
+   - Note the **Application (client) ID**
+4. Provide these values to Claude Code:
+   - Tenant ID
+   - API client ID
+   - SPA client ID
+   - API scope URI (e.g. `api://membertrack-api/access_as_user`)
+
+### Claude Code tasks (once you provide Entra IDs above)
+- Wire up MSAL.js on frontend (create `src/auth/`, `msalConfig.ts`, bearer token helper)
+- Enable JWT bearer auth on backend (uncomment in `Program.cs`, update `appsettings.json`)
+- Add `[Authorize]` to all controllers (except HealthController → `[AllowAnonymous]`)
 - Restrict access to Entra ID group `b4808399-e821-47a3-a56a-3fcd8f203b4d`
 - Role-based access structure for future role splits (e.g. restrict bulk edits)
 
 ### Deployment
 - Configure production SQL Server connection string
-- Set up GitHub Actions workflows (deploy-frontend.yml, deploy-api.yml)
+- Set up GitHub Actions workflows (`deploy-frontend.yml`, `deploy-api.yml`)
 - Deploy frontend to Azure Static Web Apps or IIS
 - Deploy backend to Azure App Service or IIS
 - Configure production CORS origins
-
 
 ## Done
 
