@@ -1,7 +1,19 @@
-export interface ImportResult {
-  imported: number;
+export interface ValidationError {
+  row: number;
+  donmanId: string | null;
+  name: string | null;
+  field: string;
+  value: string;
+  message: string;
+}
+
+export interface ValidationResult {
+  totalRows: number;
+  validCount: number;
+  errorCount: number;
+  skippedCount: number;
   skipped: ImportSkipped[];
-  exceptions: ImportException[];
+  errors: ValidationError[];
 }
 
 export interface ImportSkipped {
@@ -10,8 +22,12 @@ export interface ImportSkipped {
   reason: string;
 }
 
-export interface ImportException {
-  row: number;
-  data: string;
-  error: string;
+export interface ImportResult {
+  imported: number;
+  skipped: ImportSkipped[];
+}
+
+export interface ImportProgress {
+  processed: number;
+  total: number;
 }

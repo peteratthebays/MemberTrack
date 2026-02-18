@@ -23,15 +23,20 @@ public class MembersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PagedResult<MemberListDto>>> GetMembers(
         [FromQuery] string? search,
-        [FromQuery] MembershipStatus? status,
-        [FromQuery] MemberCategory? category,
-        [FromQuery] RenewalStatus? renewalStatus,
+        [FromQuery] string? status,
+        [FromQuery] string? category,
+        [FromQuery] string? renewalStatus,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 25;
         if (pageSize > 100) pageSize = 100;
+
+        // Parse comma-separated filter values
+        var statuses = ParseEnums<MembershipStatus>(status);
+        var categories = ParseEnums<MemberCategory>(category);
+        var renewalStatuses = ParseEnums<RenewalStatus>(renewalStatus);
 
         // Start with all members, including their most recent membership info
         var query = _context.Members
@@ -56,24 +61,24 @@ public class MembersController : ControllerBase
         }
 
         // Filter by current membership status
-        if (status.HasValue)
+        if (statuses.Count > 0)
         {
             query = query.Where(x =>
-                x.LatestMembership != null && x.LatestMembership.Status == status.Value);
+                x.LatestMembership != null && statuses.Contains(x.LatestMembership.Status));
         }
 
         // Filter by current membership category
-        if (category.HasValue)
+        if (categories.Count > 0)
         {
             query = query.Where(x =>
-                x.LatestMembership != null && x.LatestMembership.Category == category.Value);
+                x.LatestMembership != null && categories.Contains(x.LatestMembership.Category));
         }
 
         // Filter by current renewal status
-        if (renewalStatus.HasValue)
+        if (renewalStatuses.Count > 0)
         {
             query = query.Where(x =>
-                x.LatestMembership != null && x.LatestMembership.RenewalStatus == renewalStatus.Value);
+                x.LatestMembership != null && renewalStatuses.Contains(x.LatestMembership.RenewalStatus));
         }
 
         var totalCount = await query.CountAsync();
@@ -99,7 +104,14 @@ public class MembersController : ControllerBase
                     : null,
                 CurrentCategory = x.LatestMembership != null
                     ? x.LatestMembership.Category.ToString()
-                    : null
+                    : null,
+                StartDate = x.LatestMembership != null
+                    ? x.LatestMembership.StartDate
+                    : null,
+                EndDate = x.LatestMembership != null
+                    ? x.LatestMembership.EndDate
+                    : null,
+                Notes = x.Member.Notes
             })
             .ToListAsync();
 
@@ -213,6 +225,16 @@ public class MembersController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private static List<T> ParseEnums<T>(string? csv) where T : struct, Enum
+    {
+        if (string.IsNullOrWhiteSpace(csv)) return [];
+        return csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(s => Enum.TryParse<T>(s, ignoreCase: true, out var v) ? (T?)v : null)
+            .Where(v => v.HasValue)
+            .Select(v => v!.Value)
+            .ToList();
     }
 
     private static MemberDto MapToMemberDto(Member member)

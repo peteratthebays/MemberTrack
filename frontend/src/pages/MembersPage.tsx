@@ -23,39 +23,105 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ChevronDown, StickyNote } from "lucide-react";
 
-const ALL_VALUE = "__all__";
 const NONE_VALUE = "__none__";
 
-function statusBadgeVariant(
-  status: string | null
-): "default" | "secondary" | "destructive" | "outline" {
-  if (!status) return "outline";
+function MultiFilter({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  options: string[];
+  selected: Set<string>;
+  onChange: (next: Set<string>) => void;
+}) {
+  const count = selected.size;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-9 gap-1">
+          {label}
+          {count > 0 && (
+            <Badge className="ml-1 rounded-full px-1.5 text-xs">
+              {count}
+            </Badge>
+          )}
+          <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48 p-2" align="start">
+        {options.map((opt) => (
+          <label
+            key={opt}
+            className="flex items-center gap-2 rounded px-2 py-1.5 text-sm cursor-pointer hover:bg-accent"
+          >
+            <Checkbox
+              checked={selected.has(opt)}
+              onCheckedChange={(checked) => {
+                const next = new Set(selected);
+                if (checked) {
+                  next.add(opt);
+                } else {
+                  next.delete(opt);
+                }
+                onChange(next);
+              }}
+            />
+            {opt}
+          </label>
+        ))}
+        {count > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full mt-1 text-xs"
+            onClick={() => onChange(new Set())}
+          >
+            Clear
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function statusBadgeClass(status: string | null): string {
   switch (status) {
     case "Active":
-      return "default";
+      return "bg-green-600 text-white hover:bg-green-600";
     case "NonActive":
-      return "secondary";
+      return "bg-secondary text-secondary-foreground";
     default:
-      return "outline";
+      return "border border-input bg-background";
   }
 }
 
-function renewalBadgeVariant(
-  status: string | null
-): "default" | "secondary" | "destructive" | "outline" {
-  if (!status) return "outline";
+function renewalBadgeClass(status: string | null): string {
   switch (status) {
     case "Renewed":
+      return "bg-green-600 text-white hover:bg-green-600";
     case "New":
-      return "default";
+      return "bg-blue-500 text-white hover:bg-blue-500";
     case "ToRenew":
-      return "secondary";
+      return "bg-yellow-500 text-white hover:bg-yellow-500";
     case "Overdue":
     case "NotRenewing":
-      return "destructive";
+      return "bg-destructive text-destructive-foreground hover:bg-destructive";
     default:
-      return "outline";
+      return "border border-input bg-background";
   }
 }
 
@@ -72,6 +138,10 @@ export function MembersPage() {
   const category = searchParams.get("category") ?? "";
   const renewalStatus = searchParams.get("renewalStatus") ?? "";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
+
+  const statusSet = new Set(status ? status.split(",") : []);
+  const categorySet = new Set(category ? category.split(",") : []);
+  const renewalStatusSet = new Set(renewalStatus ? renewalStatus.split(",") : []);
 
   const [data, setData] = useState<PagedResult<MemberListItem> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -204,14 +274,14 @@ export function MembersPage() {
     !allOnPageSelected;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
+    <div className="mx-auto max-w-[1840px] px-4 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Members</h1>
         <Button onClick={() => navigate("/members/new")}>New Member</Button>
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <div className="flex-1 min-w-[200px]">
           <Input
             placeholder="Search by name or email..."
@@ -220,60 +290,26 @@ export function MembersPage() {
           />
         </div>
 
-        <Select
-          value={status || ALL_VALUE}
-          onValueChange={(v) => updateParam("status", v === ALL_VALUE ? "" : v)}
-        >
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_VALUE}>All Statuses</SelectItem>
-            {membershipStatuses.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <MultiFilter
+          label="Status"
+          options={membershipStatuses}
+          selected={statusSet}
+          onChange={(s) => updateParam("status", [...s].join(","))}
+        />
 
-        <Select
-          value={category || ALL_VALUE}
-          onValueChange={(v) =>
-            updateParam("category", v === ALL_VALUE ? "" : v)
-          }
-        >
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_VALUE}>All Categories</SelectItem>
-            {memberCategories.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <MultiFilter
+          label="Category"
+          options={memberCategories}
+          selected={categorySet}
+          onChange={(s) => updateParam("category", [...s].join(","))}
+        />
 
-        <Select
-          value={renewalStatus || ALL_VALUE}
-          onValueChange={(v) =>
-            updateParam("renewalStatus", v === ALL_VALUE ? "" : v)
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Renewal Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_VALUE}>All Renewal Statuses</SelectItem>
-            {renewalStatuses.map((r) => (
-              <SelectItem key={r} value={r}>
-                {r}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <MultiFilter
+          label="Renewal"
+          options={renewalStatuses}
+          selected={renewalStatusSet}
+          onChange={(s) => updateParam("renewalStatus", [...s].join(","))}
+        />
       </div>
 
       {/* Error */}
@@ -295,18 +331,22 @@ export function MembersPage() {
                   aria-label="Select all members on this page"
                 />
               </TableHead>
+              <TableHead className="w-[32px]"></TableHead>
+              <TableHead className="w-[80px]">Donman ID</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Mobile</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Renewal Status</TableHead>
+              <TableHead>Start Date</TableHead>
+              <TableHead>End Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={11} className="text-center py-8">
                   <span className="text-muted-foreground">
                     Loading members...
                   </span>
@@ -328,6 +368,24 @@ export function MembersPage() {
                       onCheckedChange={() => toggleSelect(member.id)}
                       aria-label={`Select ${member.firstName} ${member.surname}`}
                     />
+                  </TableCell>
+                  <TableCell className="w-[32px] px-1">
+                    {member.notes ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <StickyNote className="h-4 w-4 text-yellow-500" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <p className="whitespace-pre-wrap">{member.notes}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                  </TableCell>
+                  <TableCell
+                    className="text-muted-foreground"
+                    onClick={() => navigate(`/members/${member.id}`)}
+                  >
+                    {member.donmanId ?? "-"}
                   </TableCell>
                   <TableCell
                     className="font-medium"
@@ -351,7 +409,7 @@ export function MembersPage() {
                     onClick={() => navigate(`/members/${member.id}`)}
                   >
                     <Badge
-                      variant={statusBadgeVariant(
+                      className={statusBadgeClass(
                         member.currentMembershipStatus
                       )}
                     >
@@ -369,18 +427,34 @@ export function MembersPage() {
                     onClick={() => navigate(`/members/${member.id}`)}
                   >
                     <Badge
-                      variant={renewalBadgeVariant(
+                      className={renewalBadgeClass(
                         member.currentRenewalStatus
                       )}
                     >
                       {member.currentRenewalStatus ?? "None"}
                     </Badge>
                   </TableCell>
+                  <TableCell
+                    className="text-muted-foreground"
+                    onClick={() => navigate(`/members/${member.id}`)}
+                  >
+                    {member.startDate
+                      ? new Date(member.startDate).toLocaleDateString("en-AU")
+                      : "-"}
+                  </TableCell>
+                  <TableCell
+                    className="text-muted-foreground"
+                    onClick={() => navigate(`/members/${member.id}`)}
+                  >
+                    {member.endDate
+                      ? new Date(member.endDate).toLocaleDateString("en-AU")
+                      : "-"}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={11} className="text-center py-8">
                   <span className="text-muted-foreground">
                     No members found.
                   </span>
@@ -422,7 +496,7 @@ export function MembersPage() {
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background shadow-lg">
-          <div className="mx-auto max-w-7xl px-4 py-3">
+          <div className="mx-auto max-w-[1840px] px-4 py-3">
             {bulkError && (
               <div className="mb-2 rounded-md border border-destructive bg-destructive/10 p-2 text-sm text-destructive">
                 {bulkError}

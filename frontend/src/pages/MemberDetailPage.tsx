@@ -45,6 +45,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
@@ -57,11 +58,6 @@ const NONE_VALUE = "__none__";
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString();
-}
-
-function toDateInputValue(dateStr: string | null): string {
-  if (!dateStr) return "";
-  return dateStr.substring(0, 10);
 }
 
 export function MemberDetailPage() {

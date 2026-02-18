@@ -31,6 +31,9 @@ public class MemberListDto
     public string? CurrentMembershipStatus { get; set; }
     public string? CurrentRenewalStatus { get; set; }
     public string? CurrentCategory { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public string? Notes { get; set; }
 }
 
 public class CreateMemberDto

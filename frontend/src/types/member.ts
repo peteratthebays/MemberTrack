@@ -27,6 +27,9 @@ export interface MemberListItem {
   currentMembershipStatus: string | null;
   currentRenewalStatus: string | null;
   currentCategory: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  notes: string | null;
 }
 
 export interface CreateMember {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
+import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 
 export interface AddressFields {
   addressStreet: string | null;
@@ -26,17 +26,14 @@ interface UseGooglePlacesReturn {
 
 const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY as string | undefined;
 
-let loaderPromise: Promise<typeof google.maps> | null = null;
+let placesPromise: Promise<google.maps.PlacesLibrary> | null = null;
 
-function getLoaderPromise(): Promise<typeof google.maps> {
-  if (!loaderPromise) {
-    const loader = new Loader({
-      apiKey: apiKey!,
-      libraries: ["places"],
-    });
-    loaderPromise = loader.load();
+function getPlacesLibrary(): Promise<google.maps.PlacesLibrary> {
+  if (!placesPromise) {
+    setOptions({ key: apiKey! });
+    placesPromise = importLibrary("places");
   }
-  return loaderPromise;
+  return placesPromise;
 }
 
 function parseAddressComponents(
@@ -89,7 +86,7 @@ export function useGooglePlaces(): UseGooglePlacesReturn {
   useEffect(() => {
     if (!apiKey) return;
 
-    getLoaderPromise()
+    getPlacesLibrary()
       .then(() => {
         autocompleteServiceRef.current =
           new google.maps.places.AutocompleteService();
